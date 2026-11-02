@@ -140,7 +140,7 @@
     document.title = 'Örnek panel · Norevo';
     var s = document.createElement('div');
     s.className = 'ornek-serit'; s.setAttribute('role', 'note');
-    s.innerHTML = '<span><b>Örnek panel.</b> İşletme ve rakip adları uydurmadır; hiçbir şey kaydedilmez.</span> <a href="test.html">Kendi işletmenizi ücretsiz görün →</a>';
+    s.innerHTML = '<span><b>Örnek panel.</b><span class="ornek-uzun"> İşletme ve rakip adları uydurmadır; hiçbir şey kaydedilmez.</span></span> <a href="test.html">Kendi işletmenizi görün →</a>';
     document.body.insertBefore(s, document.body.firstChild);
     // Çıkış ve hesap silme örnekte anlamsız: ana sayfaya dönüş
     var c = document.getElementById('cikis'); if (c) c.textContent = 'Örnekten çık';

@@ -990,7 +990,8 @@
     var isK = isAdi(i, '');
     $('olcum-tarih').textContent = 'Son ölçüm: ' + tarih(o.bitis || o.baslangic) + (o.kaynak === 'haftalik' ? ' · otomatik' : '');
     var c;
-    if (o.harita_sira) c = yerde(i.semt) + ' "' + o.harita_sorgu + '" aramasında Google Haritalar’da ' + o.harita_sira + '. sıradasınız.';
+    var aramaYer = sadeK(o.harita_sorgu || '').indexOf(sadeK(String(i.semt || '').split(',')[0])) >= 0 ? '' : yerde(i.semt) + ' ';
+    if (o.harita_sira) c = aramaYer + '"' + o.harita_sorgu + '" aramasında Google Haritalar’da ' + o.harita_sira + '. sıradasınız.';
     else if (b.bulundu === false && b.baska_sube) c = yerde(i.semt) + ' "' + i.ad + '" profilini bulamadık. Google’da sadece "' + b.baska_sube.ad + '" görünüyor' + (b.baska_sube.adres ? ' (' + b.baska_sube.adres.split(',').slice(-2).join(',').trim() + ')' : '') + '.';
     else if (b.bulundu === false) c = 'Google Haritalar’da "' + i.ad + '" adıyla bir profil bulamadık.';
     else if (o.harita_sonuclar) c = '"' + o.harita_sorgu + '" aramasında Google Haritalar’ın ilk 20 sonucunda yoksunuz.';
@@ -1035,16 +1036,16 @@
     if (ozt.ilkSayfa) $('k-arama').className = 'iyi';
     if (yzYuzde(o) > 0) $('k-yz').className = 'iyi';
     // Önceki ölçüme göre oklar (harita: aynı aramayla; ikisinde de ölçüldüyse)
-    var ok = function (id, fark, birim) {
+    var ok = function (id, fark, birim, on) {
       if (!fark) return;
-      $(id).appendChild(el('span', (fark > 0 ? '▲ ' : '▼ ') + Math.abs(fark) + birim, 'ok ' + (fark > 0 ? 'iyi' : 'kotu')));
+      $(id).appendChild(el('span', (fark > 0 ? '▲ ' : '▼ ') + (on || '') + Math.abs(fark) + birim, 'ok ' + (fark > 0 ? 'iyi' : 'kotu')));
     };
     if (onceki) {
       var hO = aramaHaritaSira(onceki, o.harita_sorgu);
       if (hO && o.harita_sira) ok('k-harita', hO - o.harita_sira, ' sıra');
       var aO = aramaOzet(onceki);
       if (aO.aOlculen && ozt.aOlculen) ok('k-arama', ozt.ilkSayfa - aO.ilkSayfa, '');
-      if (onceki.yz_soru_sayisi && o.yz_soru_sayisi) ok('k-yz', yzYuzde(o) - yzYuzde(onceki), ' puan');
+      if (onceki.yz_soru_sayisi && o.yz_soru_sayisi) ok('k-yz', yzYuzde(o) - yzYuzde(onceki), '', '%');
     }
 
     var h = (o.hatalar || []).filter(Boolean);

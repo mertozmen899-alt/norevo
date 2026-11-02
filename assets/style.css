@@ -1282,3 +1282,10 @@ button.sayi-kutu[aria-expanded="true"]{border-color:var(--amber)}
 :root:not([data-tema="koyu"]) .bolum-koyu{background:linear-gradient(180deg,#EEF6F8,#F6FAFB);border-color:#D9EAEF}
 :root:not([data-tema="koyu"]) .btn-amber{box-shadow:0 10px 24px -12px rgba(21,94,117,.9)}
 :root:not([data-tema="koyu"]) .lp-sahne,:root:not([data-tema="koyu"]) .paket.one{box-shadow:0 30px 60px -34px rgba(21,94,117,.45)}
+
+/* Telefon (v51): testte Geri/Devam çubuğu ekranın altında sabit (seçimden sonra düğme aranmasın); örnek panel şeridi tek satır */
+@media (max-width:560px){
+  .test .gezinme{position:sticky;bottom:0;z-index:5;margin-top:24px;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:var(--zemin);box-shadow:0 -12px 18px -16px rgba(var(--golgerenk),.5)}
+  .ornek-serit{font-size:13px;padding-block:7px}
+  .ornek-uzun{display:none}
+}

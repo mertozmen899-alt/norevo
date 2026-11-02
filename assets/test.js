@@ -439,7 +439,9 @@
     }
     if (ACIKLAMA_ILK === null) ACIKLAMA_ILK = $('t-aciklama').textContent;
     var zaman = aramaZamani(v);
-    $('t-aciklama').textContent = zaman ? 'Bu sonuçlar ' + zaman + ' yapılan aramaya göre. Google Haritalar\'a ve yapay zekâya bir müşteri gibi sorduk; listeler onların cevabından alındı.' : ACIKLAMA_ILK;
+    var haritaVar = !!(v.harita && v.harita.length);
+    $('t-aciklama').textContent = !haritaVar ? 'Yapay zekâya bir müşteri gibi sorduk; Google Haritalar sırası bu sefer gösterilemedi.' + (zaman ? ' Sonuçlar ' + zaman + ' yapılan aramaya göre.' : '')
+      : zaman ? 'Bu sonuçlar ' + zaman + ' yapılan aramaya göre. Google Haritalar\'a ve yapay zekâya bir müşteri gibi sorduk; listeler onların cevabından alındı.' : ACIKLAMA_ILK;
     var hl = $('t-harita'); hl.innerHTML = '';
     if (v.harita && v.harita.length) {
       $('t-harita-not').textContent = '"' + durum.is.toLocaleLowerCase('tr') + ' ' + durum.sehir.split(',')[0] + '" diye aratınca:';
@@ -447,6 +449,7 @@
     } else {
       $('t-harita-not').textContent = v.sehir === 'Türkiye geneli' ? 'Türkiye geneli çalışanlar için harita sırası ölçülmez.'
         : v.harita_yok === 'kapasite' ? 'Bu ay ücretsiz test için ayırdığımız harita aramaları doldu. Harita sırasını ay başında yeniden gösterebileceğiz; yapay zekâ sonuçları aşağıda.'
+        : v.harita_yok === 'gunluk' ? 'Bugün ücretsiz test için ayırdığımız harita aramaları doldu. Harita sıranızı yarın görebilirsiniz; yapay zekâ sonuçları aşağıda.'
         : 'Haritalara şu an bakamadık, birazdan tekrar deneyin.';
     }
     var yl = $('t-yz'); yl.innerHTML = '';
@@ -459,7 +462,8 @@
         if (yok) suphe++;
         yl.appendChild(liSatir((i + 1) + '.', x.ad, yok ? 'Haritalar\'ın ilk 20\'sinde yok' : ''));
       });
-      if (suphe) yl.appendChild(el('li', 't-not', 'Gemini bu cevabı internete bakmadan, kendi bilgisinden verdi. "Haritalar\'ın ilk 20\'sinde yok" yazan adlar başka şehirde olabilir ya da gerçekte hiç olmayabilir.'));
+      if (!v.harita || !v.harita.length) yl.appendChild(el('li', 't-not', 'Gemini bu cevabı internete bakmadan, kendi bilgisinden verdi. Bu adları Haritalar listesiyle karşılaştıramadık; bazıları başka şehirde olabilir ya da gerçekte hiç olmayabilir.'));
+      else if (suphe) yl.appendChild(el('li', 't-not', 'Gemini bu cevabı internete bakmadan, kendi bilgisinden verdi. "Haritalar\'ın ilk 20\'sinde yok" yazan adlar başka şehirde olabilir ya da gerçekte hiç olmayabilir.'));
     } else {
       $('t-yz-soru').textContent = 'Yapay zekâ şu an cevap vermedi, birazdan tekrar deneyin.';
     }
