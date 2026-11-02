@@ -165,7 +165,7 @@ const kontrol = (ad, ok, detay) => (ok ? sonuc.gecen.push(ad) : sonuc.kalan.push
     kontrol(cihaz + ' Google yorumları kendiliğinden geldi', /37/.test(yorumYazi) && /4,3/.test(yorumYazi), yorumYazi.slice(0, 120));
     kontrol(cihaz + ' cevapsız yorumlara taslak ve Kopyala düğmesi var', (await p.$$('#yorum-icerik .yorum-taslak button')).length === 3);
     kontrol(cihaz + ' taslağın altında Yanıtla talimatı var', /Yanıtla/.test((await p.textContent('#yorum-icerik .yorum-taslak').catch(() => '')) || ''));
-    { const ty = (await p.textContent('#yorum-icerik .yorum-taslak').catch(() => '')) || ''; kontrol(cihaz + ' taslakta [TELEFON] yerine işletmenin numarası yazıyor', /lütfen 0\d{3} \d{3} \d{2} \d{2} numaramızdan/.test(ty) && !/\[TELEFON/.test(ty), ty.slice(0, 160)); }
+    { const ty = (await p.textContent('#yorum-icerik .yorum-taslak').catch(() => '')) || ''; kontrol(cihaz + ' taslakta [TELEFON] kişisel numarayla doldurulmuyor, uyarı var', /\[TELEFON\]/.test(ty) && /telefonunuzu yazmadan yayınlamayın/.test(ty), ty.slice(0, 160)); }
     kontrol(cihaz + ' cevaplanmış yorumda taslak yok', (await p.$$('#yorum-icerik .yorum.cevapli .yorum-taslak')).length === 0);
     // Platformlar: durum etiketleri
     const pl = (await p.textContent('#platform-icerik').catch(() => '')) || '';

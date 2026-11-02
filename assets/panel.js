@@ -904,17 +904,6 @@
     });
     return b;
   }
-  // Yorum cevap taslağındaki [TELEFON] yerine kurulumda verilen numarayı yazar (numara yoksa olduğu gibi bırakır)
-  function telefonYaz(no) {
-    var r = String(no || '').replace(/\D/g, '');
-    if (r.length === 12 && r.slice(0, 2) === '90') r = '0' + r.slice(2);
-    else if (r.length === 10 && r.charAt(0) === '5') r = '0' + r;
-    return r.length === 11 && r.charAt(0) === '0' ? r.replace(/^(\d{4})(\d{3})(\d{2})(\d{2})$/, '$1 $2 $3 $4') : String(no || '').trim();
-  }
-  function taslakDoldur(t) {
-    var no = telefonYaz(isletme && isletme.whatsapp);
-    return no ? String(t).replace(/\[TELEFON[A-ZÇĞİÖŞÜ ]*\]/g, no) : String(t);
-  }
   function metinCiz(kutu, sonuc) {
     var ic = sonuc.icerik || {}, alan = el('div', null, 'yazilan');
     if (sonuc.tur === 'sayfa') {
@@ -1076,7 +1065,7 @@
       ust.appendChild(sag); li.appendChild(ust);
       li.appendChild(el('p', r.metin || '(Yazı yok, sadece puan verilmiş.)', 'yorum-metin' + (r.metin ? '' : ' bos')));
       if (!r.cevaplandi && r.taslak) {
-        var taslak = taslakDoldur(r.taslak);
+        var taslak = r.taslak; // [TELEFON] bilerek doldurulmaz: kurulumdaki numara kişisel cep olabilir, taslak herkese açık yayınlanır
         var t = el('div', null, 'hazir-metin yorum-taslak');
         t.appendChild(el('span', 'Cevap taslağı', 'hazir-baslik'));
         t.appendChild(el('p', taslak));
