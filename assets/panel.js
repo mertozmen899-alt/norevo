@@ -894,7 +894,7 @@
     var ok = g.cevaplar.filter(function (c) { return !c.hata; }), gec = ok.filter(function (c) { return c.geciyor; }).length;
     var d = el('details', null, 'yz-cevap');
     var s = el('summary');
-    s.appendChild(el('span', '"' + g.soru + '"', 'yz-soru'));
+    s.appendChild(el('span', /["“”]/.test(g.soru) ? g.soru : '"' + g.soru + '"', 'yz-soru'));
     var yazi = !ok.length ? 'Sorulamadı' : (g.cevaplar.length === 1 ? (gec ? 'Adınız geçti' : 'Adınız geçmedi') : ok.length + ' cevapta ' + gec + ' kez');
     s.appendChild(el('span', yazi, 'pil ' + (!ok.length ? 'pil-a' : (gec ? 'pil-y' : 'pil-k'))));
     d.appendChild(s);
@@ -945,7 +945,10 @@
     // ChatGPT: hiç ölçüm yoksa "yakında"; daha önce ölçüldüyse ama bu ölçümde yoksa "bu ölçümde yok"
     var olcCg = o.cg_soru_sayisi != null || o.cg_cevaplar != null;
     var hicCg = !olcCg && !gecmis.some(function (x) { return x.cg_soru_sayisi != null || x.cg_cevaplar != null; });
-    var gc = motorSatir('motor-cg', 'ChatGPT', hicCg ? 'ChatGPT artık ölçülüyor. Bir sonraki ölçümde sonuçları burada göreceksiniz.' : 'Bu ölçümde ChatGPT’ye soru sorulmadı.', o.cg_soru_sayisi || 0, o.cg_gecen, o.cg_cevaplar, olcCg ? null : (hicCg ? 'sıradaki ölçümde' : 'bu ölçümde yok'));
+    // Süre dolduysa soru soruldu ama cevap yetişmedi; "sorulmadı" demeyelim
+    var cgGecikti = (o.hatalar || []).some(function (h) { return /Süre doldu/.test(String(h)); });
+    var cgBos = cgGecikti ? 'ChatGPT bu ölçümde zamanında cevap vermedi. Bir sonraki ölçümde yeniden soracağız.' : 'Bu ölçümde ChatGPT’ye soru sorulmadı.';
+    var gc = motorSatir('motor-cg', 'ChatGPT', hicCg ? 'ChatGPT artık ölçülüyor. Bir sonraki ölçümde sonuçları burada göreceksiniz.' : cgBos, o.cg_soru_sayisi || 0, o.cg_gecen, o.cg_cevaplar, olcCg ? null : (hicCg ? 'sıradaki ölçümde' : 'bu ölçümde yok'));
     var ic2 = $('motor-cg').querySelector('.yz-motor-ic'); ic2.innerHTML = '';
     if (olcCg) { var l2 = el('div', null, 'yz-liste'); gc.forEach(function (g) { l2.appendChild(yzSoruKutu(g)); }); ic2.appendChild(l2); }
   }
@@ -972,11 +975,13 @@
       var d = el('div', null, 'pay-satir' + (r.siz ? ' siz' : ''));
       d.appendChild(el('span', r.ad, 'pay-ad'));
       var cubuk = el('span', null, 'pay-cubuk'); var dolu = el('i'); dolu.style.width = Math.max(2, Math.round(100 * r.sayi / n)) + '%'; cubuk.appendChild(dolu); d.appendChild(cubuk);
-      d.appendChild(el('span', '%' + Math.round(100 * r.sayi / n), 'pay-sayi'));
+      var ps = el('span', '%' + Math.round(100 * r.sayi / n), 'pay-sayi');
+      ps.appendChild(el('small', ' · ' + n + ' cevapta ' + r.sayi, 'pay-kac'));
+      d.appendChild(ps);
       kutu.appendChild(d);
     });
     var onde = (o.yz_rakipler || []).filter(function (r) { return r.sayi > ben; });
-    $('yz-pay-not').textContent = 'Yapay zekâlardan müşteri gibi ' + n + ' cevap aldık ve her işletmenin kaç cevapta önerildiğini saydık (yüzde olarak). ' +
+    $('yz-pay-not').textContent = 'Gemini, ChatGPT ve Google’ın yapay zekâsına müşteri gibi soru sorduk, toplam ' + n + ' cevap aldık. Her işletmenin adı kaç cevapta geçti, onu sayıyoruz. ' +
       (onde.length ? onde.length + ' rakibiniz sizden daha çok öneriliyor.' : (ben ? 'Rakiplerinizden daha çok öneriliyorsunuz.' : 'Rakiplerinizin adı da geçmiyorsa yapay zekâ bu bölgeyi henüz tanımıyor; ilk öne çıkan siz olabilirsiniz.'));
   }
 
