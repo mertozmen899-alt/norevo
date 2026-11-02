@@ -328,7 +328,15 @@ async function guvenliGetir(adres: string | URL, ms: number, headers: Record<str
 
 // Sektöre özel rehber ve platform siteleri: yapay zekâya sorulur, her alan adının gerçekten açıldığı denetlenir
 async function sektorRehberleri(isK: string, GEM: string, modeller: string[]) {
-  const soru = `Türkiye'de "${isK}" işletmelerinin müşteriler tarafından bulunduğu ve işletmenin kendine profil, ilan ya da mağaza açabildiği Türk rehber, platform ve pazar yeri sitelerini listele. Sadece gerçekten var olan, Türkiye'de bilinen siteler olsun. Google, Bing, Apple, Yandex haritaları, Instagram ve Facebook'u yazma. En fazla 6 site. Sadece şu biçimde JSON dizi döndür: [{"ad":"Site adı","alan":"ornek.com","ne_ise_yarar":"Bu işletme için neden önemli, tek kısa cümle"}]`;
+  // 4KDent'e (diş kliniği) Armut, Hepsiburada ve N11 önerilmişti: site, bu iş türünün müşterisinin gerçekten baktığı yer olmalı
+  const soru = `Türkiye'de "${isK}" arayan müşterilerin işletme seçerken gerçekten baktığı ve "${isK}" işletmesinin kendine profil, ilan ya da mağaza açabildiği Türk siteleri listele.
+Kurallar:
+- Site bu iş türüne özel olmalı ya da bu iş türünün müşterileri onu yaygın olarak kullanmalı (örnek: diş kliniği için doktor randevu siteleri; restoran için yemek ve mekân siteleri).
+- Genel alışveriş siteleri (Hepsiburada, Trendyol, N11, Amazon, Çiçeksepeti) sadece işletme internetten ürün satabiliyorsa yazılır; sağlık, güzellik ve yerinde hizmet işletmelerine yazılmaz.
+- Usta ve ev hizmeti siteleri (Armut gibi) sadece eve gelen hizmet işlerine (tadilat, temizlik, nakliyat, tesisat vb.) yazılır.
+- Sadece gerçekten var olan, Türkiye'de bilinen siteler. Emin olmadığın siteyi yazma; az ama doğru site daha iyi.
+- Google, Bing, Apple, Yandex haritaları, Instagram ve Facebook'u yazma. En fazla 6 site.
+Sadece şu biçimde JSON dizi döndür (uygun site yoksa boş dizi): [{"ad":"Site adı","alan":"ornek.com","ne_ise_yarar":"Bu işletmenin müşterileri bu siteyi neden kullanıyor, tek kısa cümle"}]`;
   const { metin } = await gemini(soru, GEM, modeller, true);
   let liste: Array<{ ad?: string; alan?: string; ne_ise_yarar?: string }> = [];
   try { liste = JSON.parse(metin.replace(/^```(json)?|```$/g, "").trim()); } catch { return []; }
@@ -753,10 +761,9 @@ async function olcumYap(db: Db, isl: Isl, SERP: string, GEM: string, kaynak: "el
       const karisan = ben ? digerleri.filter((x) => adGeciyor(String(x.ad || ""), isl.ad, adHaric) && yerdeMi(x.adres, semtKisa, sehir, turkiye)) : [];
       if (karisan.length && !denetim.some((d) => d.kod === "ad-karisiyor")) denetim.push({ kod: "ad-karisiyor", mesaj: `Ad, başka işletmelerle de eşleşiyor: ${karisan.slice(0, 2).map((x) => x.ad).join(", ")}` });
     });
-    // Ana gösterim: en iyi sırada çıkılan arama (yoksa ilk ölçülebilen)
-    let ana = -1;
-    kelimeSonuc.forEach((k, i) => { if (k.harita_sira && (ana < 0 || (k.harita_sira as number) < (kelimeSonuc[ana].harita_sira as number))) ana = i; });
-    if (ana < 0) ana = haritaListeleri.findIndex((l) => l);
+    // Ana gösterim ve rakip karşılaştırması: temel arama (listenin başı), ölçülemediyse sıradaki.
+    // En iyi sıradaki arama seçiliyordu: 4KDent başlıkta "zirkonyum kaplama"da 1. görünüyor, asıl aramada 3.'ydü (2 Kasım)
+    const ana = haritaListeleri.findIndex((l) => l);
     if (ana < 0) return;
     const liste = haritaListeleri[ana], ben = liste.find(benMi);
     s.harita_sorgu = kelimeler[ana];

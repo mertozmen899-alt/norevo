@@ -481,16 +481,26 @@
     }
   };
 
+  // Yapay zekânın önerdiği sektör sitesi sadece bu işletmenin Google aramalarında gerçekten görünüyorsa ya da sektörüyle
+  // bilinen bir siteyse kalır (4KDent'e "Armut", "Hepsiburada", "N11", var olmayan "Enuygun Sağlık" önerilmişti)
+  function sektorUygun(alan, i, o) {
+    var a = alanSade(alan), tS = sadeK(i.is_turu || '');
+    var bilinen = ['sikayetvar.com'].concat(saglikIsl(i) ? ['doktortakvimi.com'] : [],
+      /(tadilat|temizlik|nakliyat|boya|tesisat|elektrik|usta|montaj|tamir|ders|fotograf|klima|cilingir)/.test(tS) ? ['armut.com'] : [],
+      /(restoran|kafe|cafe|lokanta|otel|pansiyon|kebap|pide)/.test(tS) ? ['tripadvisor.com.tr', 'yemeksepeti.com'] : []);
+    return !!aramadaGorulenAlanlar(o)[a] || bilinen.indexOf(a) >= 0;
+  }
+  // Platform listesindeki satır yapay zekânın sektör önerisinden geldiyse aynı süzgeçten geçer; sabit liste (Google, Yandex…) hep kalır
+  function platformGoster(x) {
+    var sektorden = (isletme.sektor_rehberleri || []).some(function (r) { return alanSade(r.alan) === alanSade(x.alan); });
+    return !sektorden || sektorUygun(x.alan, isletme, gecmis[0]);
+  }
   // Sektörünüzdeki rehber ve platform siteleri: araştırılmış liste + Google'da gerçekten çıkan liste sayfaları
   function rehberIsleri(i, o) {
     var isler = [];
     // Yapay zekânın önerdiği sektör sitelerinden sadece bu işletmenin Google aramalarında gerçekten görünenler ya da
     // sektörüyle bilinen büyük siteler kalır (4KDent'e "Armut" ve var olmayan "Enuygun Sağlık" önerilmişti)
-    var gorulen = aramadaGorulenAlanlar(o), tS = sadeK(i.is_turu || '');
-    var bilinen = ['sikayetvar.com'].concat(saglikIsl(i) ? ['doktortakvimi.com'] : [],
-      /(tadilat|temizlik|nakliyat|boya|tesisat|elektrik|usta|montaj|tamir|ders|fotograf|klima|cilingir)/.test(tS) ? ['armut.com'] : [],
-      /(restoran|kafe|cafe|lokanta|otel|pansiyon|kebap|pide)/.test(tS) ? ['tripadvisor.com.tr', 'yemeksepeti.com'] : []);
-    var sektorHepsi = (isletme.sektor_rehberleri || i.sektor_rehberleri || []).filter(function (x) { var a = String(x.alan || '').replace(/^www\./, ''); return gorulen[a] || bilinen.indexOf(a) >= 0; });
+    var sektorHepsi = (isletme.sektor_rehberleri || i.sektor_rehberleri || []).filter(function (x) { return sektorUygun(x.alan, i, o); });
     var sektor = sektorHepsi.filter(function (x) { return !platformdaVar(x.alan); });
     var zatenVar = sektorHepsi.length - sektor.length;
     if (sektor.length) isler.push({
@@ -1398,7 +1408,7 @@
     var p = isletme.platformlar; kutu.innerHTML = '';
     if (!$('platform-yenile').disabled) $('platform-yenile').textContent = p ? 'Yeniden kontrol et' : 'Kontrol et';
     if (!p) { kutu.appendChild(el('p', 'Henüz kontrol etmedik. "Kontrol et" düğmesine basın, 10-20 saniye sürer.', 'kart-alt')); ypIsleriCiz(); return; }
-    var l = p.liste || [];
+    var l = (p.liste || []).filter(platformGoster);
     var say = function (d) { return l.filter(function (x) { return x.durum === d; }).length; };
     kutu.appendChild(el('p', l.length + ' yerden ' + say('var') + ' tanesinde sizi bulduk, ' + say('bulunamadi') + ' tanesinde bulamadık, ' + say('kendiniz') + ' tanesine sizin bakmanız gerekiyor. Son kontrol: ' + tarih(p.tarih) + '.', 'kart-alt'));
     var ul = el('ul', null, 'platform-liste');
@@ -1440,7 +1450,7 @@
         sonuc: 'Müşteri sizi seçmeden önce yorumlara ve cevaplarınıza bakıyor. Düzenli cevap, puanınızı korumanın en kolay yolu.',
         l: '#google', lm: 'Yorumlara ve taslaklara gidin' });
     }
-    if (p && p.liste) p.liste.filter(function (x) { return x.durum === 'bulunamadi'; }).slice(0, 2).forEach(function (x) {
+    if (p && p.liste) p.liste.filter(function (x) { return x.durum === 'bulunamadi' && platformGoster(x); }).slice(0, 2).forEach(function (x) {
       var g = /google/i.test(x.ad);
       isler.push({ k: 'platform-' + sadeK(x.alan).replace(/ /g, '-'), t: g ? 'Google İşletme Profilinizi açın' : bulunma(x.ad) + ' profil açın', s: '15-20 dakika · ücretsiz',
         n: x.ne_yapmali,

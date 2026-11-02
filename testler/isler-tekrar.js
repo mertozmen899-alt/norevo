@@ -24,7 +24,7 @@ const VERI = {
   isl: { id: 'x', ad: 'Örnek Mobilya', semt: 'Çorum', is_turu: 'Mobilyacı', site: null, kurulum_bitti: true, hedef: 'telefon', degisiklik: { zaman: DEGISTI }, anahtar_kelimeler: null, secili_rakipler: null, sektor_profili: { ad: 'mobilyacı' },
     hazir_metinler: { aciklama: { tur: 'aciklama', tarih: once(0.5), icerik: { metin: 'Eski Diş, Çorum bölgesinde diş kliniği olarak hizmet veren bir sağlık merkezidir.' } },
       gonderi: { tur: 'gonderi', tarih: once(0.4), icerik: { gonderiler: [{ konu: 'Diş', metin: 'Eski Diş olarak diş ipi kullanın.', fotograf: 'Diş fırçası' }] } } },
-    platformlar: { gun: '2026-11-01', tarih: new Date().toISOString(), liste: [{ ad: 'Facebook', alan: 'facebook.com', durum: 'bulunamadi', ne_yapmali: 'Facebook sayfası çıkmadı.' }, { ad: 'Yandex Haritalar', alan: 'yandex.com.tr/harita', durum: 'bulunamadi', ne_yapmali: 'Yandex kaydınız çıkmadı.' }] },
+    platformlar: { gun: '2026-11-01', tarih: new Date().toISOString(), liste: [{ ad: 'Trendyol', alan: 'trendyol.com', durum: 'bulunamadi', ne_yapmali: 'Trendyol sayfanız çıkmadı.' }, { ad: 'Facebook', alan: 'facebook.com', durum: 'bulunamadi', ne_yapmali: 'Facebook sayfası çıkmadı.' }, { ad: 'Yandex Haritalar', alan: 'yandex.com.tr/harita', durum: 'bulunamadi', ne_yapmali: 'Yandex kaydınız çıkmadı.' }] },
     yorumlar: { gun: '2026-11-01', tarih: new Date().toISOString(), puan: 4.8, yorum_sayisi: 25, cevapsiz_sayi: 1, bakilan: 5, yorumlar: [{ ad: 'A.', puan: 2, metin: 'Teşhir ürün geldi', cevaplandi: false }] },
     sektor_rehberleri: [{ ad: 'Armut', alan: 'armut.com', ne_ise_yarar: 'x' }, { ad: 'Trendyol', alan: 'trendyol.com', ne_ise_yarar: 'x' }] },
   gecmis: [OLCUM, ESKI], olcum: OLCUM,
@@ -68,6 +68,8 @@ const kontrol = (ad, ok, detay) => (ok ? sonuc.gecen.push(ad) : sonuc.kalan.push
   kontrol('Bing ve Apple birer kez', basliklar.filter((t) => /Bing/.test(t)).length === 1 && basliklar.filter((t) => /Apple/.test(t)).length === 1);
   kontrol('resim sunucusu yerine haber sitesinin adı (ornekhaber.net), teimg yok', alanlar.includes('ornekhaber.net') && !/teimg/.test(isler), alanlar.join(','));
   kontrol('Armut tek listede', alanlar.filter((a) => a === 'armut.com').length === 1, alanlar.join(','));
+  const platform = await p.evaluate(() => (document.getElementById('platform-icerik') || {}).textContent || '');
+  kontrol('aramada görünmeyen sektör sitesi (Trendyol) platform listesinde ve İşlerim’de yok', !/Trendyol/.test(platform) && !/Trendyol/.test(isler) && /Facebook/.test(platform), platform.slice(0, 200));
   kontrol('önceki işletmenin hazır metinleri görünmüyor', !/Eski Diş|diş ipi/.test(isler));
   kontrol('önceki işletmenin "Yaptım" kaydı görünmüyor', !/başlığını düzeltin/.test(isler));
   kontrol('özet önceki işletmenin ölçümüyle karşılaştırmıyor', !/Önceki ölçüme göre/.test(ozet), ozet.match(/Önceki ölçüme göre[^\n]*/));
