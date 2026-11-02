@@ -709,6 +709,14 @@ Cevabı müşteriye doğrudan yaz: en fazla 4 cümle, sade Türkçe, "siz" diye 
 Sadece şu JSON'u döndür: {"karar":"hata, dogru ya da belirsiz","cevap":"müşteriye mesaj"}`;
 }
 
+// "Yanlış mı?" ile bu ay (Türkiye takvim ayı) iade edilen elle ölçüm sayısı
+const AYLIK_IADE = 2;
+async function ayIadeSayisi(db: any, isletmeId: string): Promise<number> {
+  const ayBasi = new Date(Date.parse(bugunTR().slice(0, 7) + "-01T00:00:00+03:00")).toISOString();
+  const { count } = await db.from("olcumler").select("id", { count: "exact", head: true }).eq("isletme_id", isletmeId).eq("hak_iade", true).gte("baslangic", ayBasi);
+  return count ?? AYLIK_IADE; // sayılamazsa iade yok
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ hata: "Sadece POST" }, 405);
@@ -769,7 +777,8 @@ Deno.serve(async (req) => {
     const onceki = isl.yorumlar as Record<string, any> | null;
     // Denetçiden önce yazılmış taslaklar bir kez denetlenip kaydedilir (SerpApi harcamaz)
     const GEMy = (Deno.env.get("GEMINI_API_KEY") || "").trim();
-    if (onceki && !onceki.taslak_denetim && GEMy && (onceki.yorumlar || []).some((y: Record<string, any>) => !y.cevaplandi && y.taslak)) {
+    // Gemini o an çalışmadıysa ("denetlenemedi") sonraki açılışta yeniden denenir
+    if (onceki && (!onceki.taslak_denetim || onceki.taslak_denetim.durum === "denetlenemedi") && GEMy && (onceki.yorumlar || []).some((y: Record<string, any>) => !y.cevaplandi && y.taslak)) {
       try {
         onceki.taslak_denetim = await taslaklariDenetle(isl, onceki.yorumlar, GEMy);
         await db.from("isletmeler").update({ yorumlar: onceki }).eq("id", isl.id);
@@ -834,7 +843,7 @@ Deno.serve(async (req) => {
     const anahtar = tur === "sayfa" ? `sayfa:${sade(kelime)}` : tur;
     if (govde.onbellek && kayit[anahtar]) {
       // Denetçiden önce yazılmış metin: bir kez denetlenip kaydedilir
-      if (!kayit[anahtar].denetim) {
+      if (!kayit[anahtar].denetim || kayit[anahtar].denetim.durum === "denetlenemedi") {
         const d = await denetle(tur, isl, kayit[anahtar].icerik || {}, GEM);
         kayit[anahtar] = { ...kayit[anahtar], icerik: d.icerik, denetim: d.denetim };
         await db.from("isletmeler").update({ hazir_metinler: kayit }).eq("id", isl.id);
@@ -917,11 +926,11 @@ Deno.serve(async (req) => {
       o = data;
     }
     const GEM = (Deno.env.get("GEMINI_API_KEY") || "").trim();
-    let karar = "belirsiz", cevap = "";
+    let karar = "belirsiz", cevap = "", yzKarar = false;
     if (GEM) {
       try {
         const c = await gemini(yanlisSorusu(bolum, isl, notu, yanlisVerisi(bolum, isl, o, String(baglam.kelime || ""))), GEM, 0.2);
-        if (["hata", "dogru", "belirsiz"].includes(c?.karar)) karar = c.karar;
+        if (["hata", "dogru", "belirsiz"].includes(c?.karar)) { karar = c.karar; yzKarar = true; }
         cevap = uzunTireYok(String(c?.cevap || "")).replace(/[*#]/g, "").trim().slice(0, 1200);
       } catch (e) { console.log("yanlis gemini", String(e)); }
     }
@@ -937,8 +946,9 @@ Deno.serve(async (req) => {
             islem = "site_tarandi"; site = s; ek.push("Sitenizi yeniden taradık, güncel sonuç ekranda.");
           }
         } catch (e) { console.log("yanlis site", String(e)); }
-      } else if (o && o.kaynak === "elle" && !o.hak_iade && o.durum !== "hata" && Date.now() - Date.parse(o.baslangic) < 31 * 864e5 && (await harca("iade", 1, 2))) {
-        // Aylık hak (olcum: AYLIK_OLCUM_HAKKI) bu ayın ölçümlerini sayar; geçen aydan kalan iade zararsız
+      } else if (yzKarar && karar === "hata" && o && o.kaynak === "elle" && !o.hak_iade && o.durum !== "hata" && Date.now() - Date.parse(o.baslangic) < 31 * 864e5
+        && (await ayIadeSayisi(db, isl.id)) < AYLIK_IADE && (await harca("iade", 1, 2))) {
+        // Sadece yapay zekâ gerçekten "hata" dediyse ve ayda en fazla AYLIK_IADE kez (yoksa "Yanlış mı?" sınırsız ölçüm hakkı olur)
         await db.from("olcumler").update({ hak_iade: true }).eq("id", o.id);
         islem = "hak_iade"; ek.push("Bu ölçüm aylık ölçüm hakkınızdan düşülmedi, \"Tekrar ölç\" ile yeniden ölçebilirsiniz.");
       }
