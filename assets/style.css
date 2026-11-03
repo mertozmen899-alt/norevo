@@ -590,7 +590,7 @@ span.yakinda{display:inline-block;vertical-align:middle;margin-left:8px;backgrou
 .yz-isletmeler li{font-size:13px;padding:4px 10px;border-radius:999px;background:var(--kart3);color:var(--yazi2)}
 .yz-isletmeler li.siz{background:var(--amberkoyu);color:var(--amberyazi);font-weight:800;box-shadow:inset 0 0 0 1px var(--amberkenar)}
 @media (max-width:560px){.uc-kutu{grid-template-columns:1fr}.sayi-kutu b{font-size:28px}}
-@media (max-width:560px){.tablo th,.tablo td{padding:11px 10px}}
+@media (max-width:560px){.tablo th,.tablo td{padding:11px 10px}#p2 .tablo{min-width:0}}
 
 /* Arama kelimeleri */
 .kelime-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
